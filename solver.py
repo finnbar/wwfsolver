@@ -264,9 +264,6 @@ def testRoutine():
     prettyPrint(newGrid)
     print(WordList[WordNumber],HighestScore)
 
-if __name__ == '__main__':
-    solverSetup()
-
 def solverSetup():
     loadDictionary("dictionary.txt")
     # Add to Modifiers. The Grid has two lines of reflection, so we define the top quarter and then reflect:
@@ -293,3 +290,6 @@ def solverSetup():
             Modifiers[14-x][14-y] = Modifiers[x][y]
             Modifiers[14-x][y] = Modifiers[x][y]
             Modifiers[x][14-y] = Modifiers[x][y]
+
+if __name__ == '__main__':
+    solverSetup()
