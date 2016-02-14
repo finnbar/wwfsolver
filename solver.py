@@ -1,9 +1,10 @@
-import pickle
+import pickle,copy
 
 Modifiers = [[" " for j in range(15)] for i in range(15)]
 Scores = {"_": 0, "A": 1, "E": 1, "I": 1, "O": 1, "T": 1, "R": 1, "S": 1, "L": 2, "U": 2, "D": 2, "N": 2, "Y": 3, "G": 3, "H": 3, "B": 4, "C": 4, "F": 4, "M": 4, "P": 4, "W": 4, "K": 5, "V": 5, "X": 8, "J": 10, "Q": 10, "Z": 10}
 Alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 Dictionary = {}
+SimpleDictionary = {}
 
 def prettyPrint(g):
 	for i in range(15):
@@ -12,8 +13,9 @@ def prettyPrint(g):
 			s += g[i][j] + ","
 		print s[:-1]
 
-def placeOnGrid(g,p,word):
+def placeOnGrid(grid,p,word):
 	# p is placements
+	g = copy.deepcopy(grid)
 	for i in range(len(p)):
 		g[p[i][0]][p[i][1]] = word[i]
 	return g
@@ -29,12 +31,12 @@ def findPlacements(g,solution):
 			g[sx][i] = w[i+len(w)-1-sy]
 	return placements
 
-def findAllWords(g,line,tiles,row,column,word,flipped,blanks=[],attached=False):
+def findAllWords(g,line,tiles,row,column,word,flipped,dictionary,blanks=[],attached=False):
 	WordList = []
 	possibles = line[column][1:] # Ignore the bonus string...
 	for possible in possibles:
 		if possible in tiles or line[column][0] == "board" or "_" in tiles:
-			if isPartOfWord(word+possible):
+			if isPartOfWord(word+possible,dictionary):
 				# Check if there's a tile next to it, if so, mark as so.
 				# This means checking if we've got one above or below.
 				if row - 1 > 0:
@@ -43,7 +45,7 @@ def findAllWords(g,line,tiles,row,column,word,flipped,blanks=[],attached=False):
 				if row + 1 < 15:
 					if g[row+1][column] != " ":
 						attached = True
-				if isCompletedWord(word+possible) and attached:
+				if isCompletedWord(word+possible,dictionary) and attached:
 					# Last check: is this the end of a word?:
 					orientation = ["across","down"][flipped]
 					c = [column,row][flipped]
@@ -64,17 +66,17 @@ def findAllWords(g,line,tiles,row,column,word,flipped,blanks=[],attached=False):
 					else:
 						newTiles.remove(possible)
 					if column + 1 < 15:
-						for newword in findAllWords(g,line,newTiles,row,column+1,word+possible,flipped,newBlanks,attached):
+						for newword in findAllWords(g,line,newTiles,row,column+1,word+possible,flipped,dictionary,newBlanks,attached):
 							WordList.append(newword)
 				else:
 					# So we didn't add anything, but we have to continue.
 					# This allows you to continue words.
 					if column + 1 < 15:
-						for newword in findAllWords(g,line,tiles,row,column+1,word+possible,flipped,newBlanks,True):
+						for newword in findAllWords(g,line,tiles,row,column+1,word+possible,flipped,dictionary,newBlanks,True):
 							WordList.append(newword)
 	return WordList
 
-def doRows(grid,tiles,flipped=False):
+def doRows(grid,tiles,dictionary,flipped=False):
 	WordList = []
 	# Work up to down on the current grid:
 	for i in range(15):
@@ -96,27 +98,27 @@ def doRows(grid,tiles,flipped=False):
 				for t in tiles:
 					if t == "_":
 						for a in Alphabet:
-							if len(backword + a + forword) == 1 or isCompletedWord(backword + a + forword):
+							if len(backword + a + forword) == 1 or isCompletedWord(backword + a + forword,dictionary):
 								if not a in line[j]:
 									line[j].append(a)
 					else:
-						if len(backword + t + forword) == 1 or isCompletedWord(backword + t + forword):
+						if len(backword + t + forword) == 1 or isCompletedWord(backword + t + forword,dictionary):
 							if not t in line[j]:
 								line[j].append(t)
 		for q in range(15):
 			if q > 0:
 				if line[q-1][0] == "tiles":
-					for newword in findAllWords(grid,line,tiles,i,q,"",flipped):
+					for newword in findAllWords(grid,line,tiles,i,q,"",flipped,dictionary):
 						WordList.append(newword)
 			else: 
-				for newword in findAllWords(grid,line,tiles,i,q,"",flipped):
+				for newword in findAllWords(grid,line,tiles,i,q,"",flipped,dictionary):
 					WordList.append(newword)
 	return WordList
 
-def doColumns(grid,tiles):
+def doColumns(grid,tiles,dictionary):
 	# Flip the rows and columns
 	grid = [[grid[i][j] for i in range(15)] for j in range(15)]
-	return doRows(grid,tiles,True)
+	return doRows(grid,tiles,dictionary,True)
 
 def scoreMove(word,grid,modifiers,verbose=False):
 	# word = ("word",x,y,"across or down",blanktiles)
@@ -195,8 +197,8 @@ def scoreLetter(tile,grid,modifiers,wordModifiers,verbose):
 	if verbose: print(tile[0],"is worth",score,"!")
 	return wordModifiers,score
 
-def isPartOfWord(word):
-	partOfDictionary = Dictionary
+def isPartOfWord(word,dictionary):
+	partOfDictionary = dictionary
 	for letter in word:
 		if letter in partOfDictionary:
 			partOfDictionary = partOfDictionary[letter]
@@ -204,8 +206,8 @@ def isPartOfWord(word):
 			return False
 	return True
 
-def isCompletedWord(word):
-	partOfDictionary = Dictionary
+def isCompletedWord(word,dictionary):
+	partOfDictionary = dictionary
 	for letter in word:
 		if letter in partOfDictionary:
 			partOfDictionary = partOfDictionary[letter]
@@ -228,8 +230,7 @@ def parseDictionary(d):
 				previousIndex["acc"] = True
 	return Dictionary
 
-def importDictionary(filename):
-	global Dictionary
+def importDictionary(filename,outfile):
 	f = file(filename,"r")
 	words = []
 	data = f.readline()
@@ -237,21 +238,51 @@ def importDictionary(filename):
 		words.append(data)
 		data = f.readline()
 	Dictionary = parseDictionary(words)
-	d = file("dictionary.txt","w")
+	d = file(outfile,"w")
 	pickle.dump(Dictionary,d)
 	d.close()
 
-def loadDictionary(filename):
-	global Dictionary
-	f = file(filename,"r")
+def loadDictionaries(full,simple):
+	global Dictionary, SimpleDictionary
+	f = file(full,"r")
 	Dictionary = pickle.load(f)
+	f.close()
+	s = file(simple,"r")
+	SimpleDictionary = pickle.load(s)
+	s.close()
 
 def outputToFile(filename,variable):
 	f = file(filename,"w")
 	f.write(str(variable))
-	f.close
+	f.close()
 
-def testRoutine():
+def findSolutions(g,chosenTiles,dictionary,verbose=False):
+	grid = copy.deepcopy(g)
+	if verbose:
+		prettyPrint(grid)
+		print chosenTiles
+	WordList = doRows(grid,chosenTiles,dictionary)
+	if verbose: print len(WordList),"across words found."
+	for word in doColumns(grid,chosenTiles,dictionary):
+		WordList.append(word)
+	if verbose: print len(WordList),"words found."
+	HighestScore = 0
+	WordNumber = 0
+	for i in range(len(WordList)):
+		#print WordList[i]
+		s = scoreMove(WordList[i],grid,Modifiers)
+		if s > HighestScore:
+			HighestScore = s
+			WordNumber = i
+	if verbose: print "Found all scores."
+	newGrid = placeOnGrid(grid, findPlacements(grid,WordList[WordNumber]), WordList[WordNumber][0])
+	if verbose:
+		prettyPrint(newGrid)
+		print(WordList[WordNumber],HighestScore)
+		print "\n\n"
+	return WordList[WordNumber]
+
+def testRoutine(verbose=True):
 	Grid = [[" " for j in range(15)] for i in range(15)]
 	Grid[7][6] = "A"
 	Grid[7][7] = "P"
@@ -273,28 +304,21 @@ def testRoutine():
 	Grid[8][10] = "T"
 	Grid[9][10] = "A"
 	chosenTiles = ["A","B","A","Z","Q","V","_"]
-	prettyPrint(Grid)
-	WordList = doRows(Grid,chosenTiles)
-	for word in doColumns(Grid,chosenTiles):
-		WordList.append(word)
-	print len(WordList)
-	HighestScore = 0
-	WordNumber = 0
-	for i in range(len(WordList)):
-		#print WordList[i]
-		s = scoreMove(WordList[i],Grid,Modifiers)
-		if s > HighestScore:
-			HighestScore = s
-			WordNumber = i
-	print "Found all scores"
-	newGrid = placeOnGrid(Grid, findPlacements(Grid,WordList[WordNumber]), WordList[WordNumber][0])
-	print
-	prettyPrint(newGrid)
-	print(WordList[WordNumber],HighestScore)
-	return WordList
+	bestFullMove = findSolutions(Grid,chosenTiles,Dictionary,verbose)
+	bestSimpleMove = findSolutions(Grid,chosenTiles,SimpleDictionary,verbose)
+	print bestFullMove,bestSimpleMove
 
 def solverSetup():
-	loadDictionary("dictionary.txt")
+	try:
+		loadDictionaries("dictionary.txt","simpledictionary.txt")
+	except:
+		print "Importing dictionaries! This may take a while..."
+		importDictionary("enable1.txt","dictionary.txt")
+		print "Full dictionary imported!"
+		importDictionary("tenhundred.txt","simpledictionary.txt")
+		print "Simple dictionary imported!"
+		loadDictionaries("dictionary.txt","simpledictionary.txt")
+		print "Both dictionaries loaded!"
 	# Add to Modifiers. The Grid has two lines of reflection, so we define the top quarter and then reflect:
 	Modifiers[0][3] = "TW"
 	Modifiers[0][6] = "TL"
