@@ -1,10 +1,8 @@
 import pickle
 
-Grid = [[" " for j in range(15)] for i in range(15)]
 Modifiers = [[" " for j in range(15)] for i in range(15)]
 Scores = {"_": 0, "A": 1, "E": 1, "I": 1, "O": 1, "T": 1, "R": 1, "S": 1, "L": 2, "U": 2, "D": 2, "N": 2, "Y": 3, "G": 3, "H": 3, "B": 4, "C": 4, "F": 4, "M": 4, "P": 4, "W": 4, "K": 5, "V": 5, "X": 8, "J": 10, "Q": 10, "Z": 10}
 Alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-WordList = []
 Dictionary = {}
 
 def prettyPrint(g):
@@ -32,6 +30,7 @@ def findPlacements(g,solution):
 	return placements
 
 def findAllWords(g,line,tiles,row,column,word,flipped,blanks=[],attached=False):
+	WordList = []
 	possibles = line[column][1:] # Ignore the bonus string...
 	for possible in possibles:
 		if possible in tiles or line[column][0] == "board" or "_" in tiles:
@@ -65,14 +64,18 @@ def findAllWords(g,line,tiles,row,column,word,flipped,blanks=[],attached=False):
 					else:
 						newTiles.remove(possible)
 					if column + 1 < 15:
-						findAllWords(g,line,newTiles,row,column+1,word+possible,flipped,newBlanks,attached)
+						for newword in findAllWords(g,line,newTiles,row,column+1,word+possible,flipped,newBlanks,attached):
+							WordList.append(newword)
 				else:
 					# So we didn't add anything, but we have to continue.
 					# This allows you to continue words.
 					if column + 1 < 15:
-						findAllWords(g,line,tiles,row,column+1,word+possible,flipped,newBlanks,True)
+						for newword in findAllWords(g,line,tiles,row,column+1,word+possible,flipped,newBlanks,True):
+							WordList.append(newword)
+	return WordList
 
 def doRows(grid,tiles,flipped=False):
+	WordList = []
 	# Work up to down on the current grid:
 	for i in range(15):
 		line = grid[i][:]
@@ -103,14 +106,17 @@ def doRows(grid,tiles,flipped=False):
 		for q in range(15):
 			if q > 0:
 				if line[q-1][0] == "tiles":
-					findAllWords(grid,line,tiles,i,q,"",flipped)
-			else:
-				findAllWords(grid,line,tiles,i,q,"",flipped)
+					for newword in findAllWords(grid,line,tiles,i,q,"",flipped):
+						WordList.append(newword)
+			else: 
+				for newword in findAllWords(grid,line,tiles,i,q,"",flipped):
+					WordList.append(newword)
+	return WordList
 
 def doColumns(grid,tiles):
 	# Flip the rows and columns
 	grid = [[grid[i][j] for i in range(15)] for j in range(15)]
-	doRows(grid,tiles,True)
+	return doRows(grid,tiles,True)
 
 def scoreMove(word,grid,modifiers,verbose=False):
 	# word = ("word",x,y,"across or down",blanktiles)
@@ -246,6 +252,7 @@ def outputToFile(filename,variable):
 	f.close
 
 def testRoutine():
+	Grid = [[" " for j in range(15)] for i in range(15)]
 	Grid[7][6] = "A"
 	Grid[7][7] = "P"
 	Grid[7][8] = "P"
@@ -267,8 +274,9 @@ def testRoutine():
 	Grid[9][10] = "A"
 	chosenTiles = ["A","B","A","Z","Q","V","_"]
 	prettyPrint(Grid)
-	doRows(Grid,chosenTiles)
-	doColumns(Grid,chosenTiles)
+	WordList = doRows(Grid,chosenTiles)
+	for word in doColumns(Grid,chosenTiles):
+		WordList.append(word)
 	print len(WordList)
 	HighestScore = 0
 	WordNumber = 0
@@ -283,6 +291,7 @@ def testRoutine():
 	print
 	prettyPrint(newGrid)
 	print(WordList[WordNumber],HighestScore)
+	return WordList
 
 def solverSetup():
 	loadDictionary("dictionary.txt")
