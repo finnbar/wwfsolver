@@ -1,7 +1,4 @@
-from solver import *
 from emailSender import *
-from imageProcessing import * # Different components
 
 if __name__ == '__main__':
-	solverSetup()
-	emailSetup()
+	emailSetup(raw_input("Enter password: ")) # This in turn sets up imageProcessing and solver.

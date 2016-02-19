@@ -1,5 +1,6 @@
 from PIL import Image
 import os
+from solver import *
 borderEdgeX = 3 # Border between edge and start of grid
 borderEdgeY = 110
 borderX = 5 # Border between two edges of squares (left to right)
@@ -7,7 +8,6 @@ borderY = 6 # Border between two edges of squares (up to down)
 sizeX = 19 # Box size
 sizeY = 18 # Box size
 # bEX, bEY, bX, bY, sX, sY = 1, 323, 2, 3, 46, 45 for exampleScreenshot768
-tileColours = [(177,85,75),(177,85,76),(17,127,187),(15,126,186),(16,126,186),(107,160,85),(234,152,46),(193,200,207),(234,151,46)] # These are the colours of empty tiles, so ignore these
 comparisonData = {}
 
 def openImage(location):
@@ -25,17 +25,12 @@ def parseGrid(image):
 	for i in range(15):
 		for j in range(15):
 			ImageGrid[i][j] = image.crop(getCoords(i,j))
-			testPixel = ImageGrid[i][j].getpixel((6,6))
-			if not testPixel in tileColours:
-				ImageGrid[i][j] = ImageGrid[i][j].convert("L")
-				ImageGrid[i][j] = ImageGrid[i][j].point(lambda x: (255,0)[x > 225 or x < 100])
-			else:
-				# Delete, this is an empty tile.
-				ImageGrid[i][j] = ""
+			ImageGrid[i][j] = ImageGrid[i][j].convert("L")
+			ImageGrid[i][j] = ImageGrid[i][j].point(lambda x: (255,0)[x > 225 or x < 100])
 	return ImageGrid
 
 def identifySquare(tile):
-	lowestError = 20
+	lowestError = 20 # How much error is allowed before deeming an image as not being a letter.
 	bestFit = ""
 	for i in comparisonData:
 		err = compareImages(tile,comparisonData[i])
@@ -58,6 +53,17 @@ def compareImages(i1,i2):
 # TODO: Collect test data from screenshot.
 # Win.
 
+def readGrid(ImageGrid, verbose=False):
+	Grid = [[" " for j in range(15)] for i in range(15)]
+	for i in range(15):
+		for j in range(15):
+			if ImageGrid[i][j] != "":
+				Grid[j][i] = identifySquare(ImageGrid[i][j])
+				if Grid[j][i] == "":
+					Grid[j][i] = " "
+					if verbose: print "Tile at",j,i,"not recognised"
+	return Grid
+
 def loadComparisonData(folder):
 	for i in os.listdir(folder):
 		comparisonData.update({i[0]: Image.open(folder+"/"+i)})
@@ -71,17 +77,22 @@ def createComparisonData(folder):
 	for i in saveData:
 		saveData[i].save(folder+"/"+i+".png")
 
-if __name__ == '__main__':
-	screenshot = openImage("exampleScreenshot362.png")
-	screenshot.show()
+def processImage(filename,chosenTiles):
+	screenshot = openImage(filename)
+	#screenshot.show()
 	ImageGrid = parseGrid(screenshot)
-	ImageGrid[7][7].show()
-	ImageGrid[7][10].show()
-	ImageGrid[7][11].show()
-	ImageGrid[9][7].show()
-	print "Comparing As:",compareImages(ImageGrid[7][10],ImageGrid[8][9])
-	print "Comparing T and I:",compareImages(ImageGrid[9][7],ImageGrid[9][8])
+	Grid = readGrid(ImageGrid)
+	fullSol, simpleSol = findBothSolutions(Grid,chosenTiles,True)
+	bestgrid = placeOnGrid(Grid,findPlacements(Grid,fullSol),fullSol[0])
+	simplegrid = placeOnGrid(Grid,findPlacements(Grid,simpleSol),simpleSol[0])
+	return bestgrid, simplegrid, fullSol, simpleSol
+
+def imageProcessingSetup():
 	if loadComparisonData("data-362") == 0:
 		createComparisonData("data-362")
 		loadComparisonData("data-362")
-	print identifySquare(ImageGrid[7][10])
+	solverSetup() # Also sets up the stage above
+
+if __name__ == '__main__':
+	imageProcessingSetup()
+	print processImage("exampleScreenshot362.png",["A","B","A","Z","Q","V","_"])

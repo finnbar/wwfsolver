@@ -1,20 +1,19 @@
 import imaplib2,smtplib,time,email
 from threading import *
-from solver import *
 from imageProcessing import *
 myEmail = "wordswithfriendssolver@gmail.com"
 
-def login():
+def login(password):
 	global idler
 	smtpObj = smtplib.SMTP("smtp.gmail.com", 587)
 	assert smtpObj.ehlo()[0] == 250
 	smtpObj.starttls()
-	smtpObj.login(myEmail,"thissolverisamazing")
+	smtpObj.login(myEmail,password)
 	print "SMTP done!"
 	# TODO: SECURELY STORE PASSWORD, FINNBAR.
 	# Anyway, we now have an SMTP object, which can be passed to other functions
 	imapObj = imaplib2.IMAP4_SSL("imap.googlemail.com")
-	imapObj.login(myEmail,"thissolverisamazing")
+	imapObj.login(myEmail,password)
 	imapObj.select("INBOX")
 	idler = Idler(imapObj)
 	idler.start()
@@ -22,20 +21,109 @@ def login():
 	# Now we have an IMAP object too.
 	return imapObj,smtpObj
 
-def receiveMail():
-	imapObj.select("inbox")
-	result, data = imapObj.uid("search", None, "UNSEEN")
-	# TODO: Write rest of function here, using email library to parse the email afterwards
-	# See:
-	# https://yuji.wordpress.com/2011/06/22/python-imaplib-imap-example-with-gmail/
-	# https://docs.python.org/2/library/imaplib.html
+def getPositionOfWord(move):
+	r, c = move[1],move[2]
+	if move[3] == "down":
+		c = (c + c - len(move[0]))/2
+	else:
+		r = (r + r - len(move[0]))/2
+	if r > 7:
+		if c > 7:
+			return "bottom-right quadrant"
+		else:
+			return "bottom-left quadrant"
+	else:
+		if c > 7:
+			return "top-right quadrant"
+		else:
+			return "top-left quadrant"
 
-def sendMail(recipient,bestmove,simplemove):
+def getAttachedWord(grid,move,specifyAttachedLetter=False):
+	r,c = move[1],move[2]
+	for i in range(len(move[0])):
+		# For each letter in the word:
+		if move[3] == "across":
+			backword = ""
+			for j in range(r-1,-1,-1):
+				if grid[j][c-i] != " ":
+					backword = grid[j][c-i] + backword
+				else: break
+			forword = ""
+			for j in range(r+1,15):
+				if grid[j][c-i] != " ":
+					forword += grid[j][c-i]
+				else: break
+			attachedWord = backword + grid[r][c-i] + forword
+			if len(attachedWord) > 1:
+				if specifyAttachedLetter:
+					return "across from the "+grid[r][c-i]+" in "+attachedWord
+				else:
+					return attachedWord
+		else:
+			backword = ""
+			for j in range(c-1,-1,-1):
+				if grid[r-i][j] != " ":
+					backword = grid[r-i][j] + backword
+				else: break
+			forword = ""
+			for j in range(c+1,15):
+				if grid[r-i][j] != " ":
+					forword += grid[r-i][j]
+				else: break
+			attachedWord = backword + grid[r-i][c] + forword
+			if len(attachedWord) > 1:
+				if specifyAttachedLetter:
+					return "down from the "+grid[r-i][c]+" in "+attachedWord
+				else:
+					return attachedWord
+
+def getLettersOfWord(move):
+	t = []
+	for i in move[0]:
+		t.append(i)
+	t.sort()
+	return ", ".join(t)
+
+def prettyReturnGrid(g,moveToDisplay):
+	# Build a box around the centre of a word.
+	r, c = moveToDisplay[1],moveToDisplay[2]
+	if moveToDisplay[3] == "down":
+		c = (c + c - len(moveToDisplay[0]))/2
+	else:
+		r = (r + r - len(moveToDisplay[0]))/2
+	size = len(moveToDisplay[0]) + 1
+	first = (r-size,c-size)
+	second = (r+size,c+size)
+	gridString = ""
+	for i in range(first[0],second[0]+1):
+		if i in range(15):
+			s = "..."
+			for j in range(first[1],second[1]+1):
+				if j in range(15):
+					s += g[i][j] + ","
+			gridString += s[:-1] + "...\n"
+	return gridString
+
+def generateEmail(bestgrid, simplegrid, bestmove, simplemove):
+	mailString = "Subject: Words With Friends (requested " + time.ctime() + ")\n"
+	mailString += "Hello!\n\nYou asked for help with a certain Words With Friends puzzle. Good news, we found a solution! But first, some hints, just in case you want to improve first."
+	mailString += "\n\nHint #1: The best move is located in the "+getPositionOfWord(bestmove)+", attached to (or creating) the word "+getAttachedWord(bestgrid,bestmove)+"."
+	mailString += "\nIf you're only looking at commonly used words, the best move is in the "+getPositionOfWord(simplemove)+", attached to (or creating) the word "+getAttachedWord(simplegrid,simplemove)+"."
+	# TODO: actually write email.
+	mailString += "\n"*8
+	mailString += "Hint #2: The best move uses the letters "+getLettersOfWord(bestmove)+"."
+	mailString += "\nIf you're only looking at commonly used words, the best move uses the letters "+getLettersOfWord(simplemove)+"."
+	mailString += "\n"*8
+	mailString += "Solution: "+bestmove[0]+", which is "+getAttachedWord(bestgrid,bestmove,True)+". The last letter is at position ("+str(bestmove[2]+1)+","+str(bestmove[1]+1)+"). This may be more easily read from this image:\n"
+	mailString += prettyReturnGrid(bestgrid,bestmove)
+	mailString += "\nIf you are only looking at commonly used words, you'll instead be looking at "+simplemove[0]+", which is "+getAttachedWord(simplegrid,simplemove,True)+". The last letter is at position ("+str(simplemove[1]+1)+","+str(simplemove[2]+1)+"). This may be more easily read from this image:\n"
+	mailString += prettyReturnGrid(simplegrid,simplemove)
+	mailString += "\nThank you for using the service today!"
+	return mailString
+
+def sendMail(bestgrid,simplegrid,recipient,bestmove,simplemove):
 	if smtpObj:
-		mailString = "Subject: Words With Friends (requested " + time.ctime() + ")\n"
-		mailString += "Hello!\n\nYou asked for help with a certain Words With Friends puzzle. Good news, we found a solution! But first, some hints, just in case you want to improve first."
-		mailString += "\n\nHint #1: The best move is located in the "
-		# TODO: actually write email.
+		mailString = generateEmail(bestgrid,simplegrid,bestmove,simplemove)
 		success = smtpObj.sendmail(myEmail,recipent,mailString)
 		count = 0
 		while success != {} and count < 5:
@@ -122,23 +210,32 @@ class Idler(object):
 						print part.get_content_type()
 						if part.get_content_type() == 'image/png':
 							open("screenshot.png","wb").write(part.get_payload(decode=True))
-							solveGrid("screenshot.png",emailmessage["From"])
+							solveGrid("screenshot.png",emailmessage["Subject"],emailmessage["From"])
 						elif part.get_content_type() == 'image/jpeg':
 							open("screenshot.jpeg","wb").write(part.get_payload(decode=True))
-							solveGrid("screenshot.jpeg",emailmessage["From"])
+							solveGrid("screenshot.jpeg",emailmessage["Subject"],emailmessage["From"])
 					imapObj.store(mailuid, "+FLAGS", "\\Deleted")
 		imapObj.expunge()
 
-def solveGrid(filename,recipient):
+def solveGrid(filename,tiles,recipient):
 	print "Let's solve!"
 	# Solve the things (pass to imageprocessing, pass grid to solver and then return here), then
-	#os.remove(filename)
+	chosenTiles = []
+	for i in tiles:
+		if i in "ABCDEFGHIJKLMNOPQRSTUVWXYZ_":
+			chosenTiles.append(i)
+	bestgrid, simplegrid, bestmove, simplemove = processImage(filename,chosenTiles)
+	#print generateEmail(bestgrid,simplegrid,bestmove,simplemove)
+	sendMail(grid,bestmove,simplemove,recipient)
+	os.remove(filename)
 
-def emailSetup():
+def emailSetup(password):
 	global imapObj,smtpObj
-	imapObj,smtpObj = login()
+	imapObj,smtpObj = login(password)
+	imageProcessingSetup()
 	raw_input("Press enter to finish.")
 	logout()
 
 if __name__ == '__main__':
-	emailSetup()
+	emailSetup(raw_input("Enter password: "))
+	solveGrid("exampleScreenshot362.png","ABAZQV_","finnbar.keating@kcl.ac.uk")

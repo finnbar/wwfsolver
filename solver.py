@@ -256,7 +256,7 @@ def outputToFile(filename,variable):
 	f.write(str(variable))
 	f.close()
 
-def findSolutions(g,chosenTiles,dictionary,verbose=False):
+def findDictionarySolution(g,chosenTiles,dictionary,verbose=False):
 	grid = copy.deepcopy(g)
 	if verbose:
 		prettyPrint(grid)
@@ -282,31 +282,10 @@ def findSolutions(g,chosenTiles,dictionary,verbose=False):
 		print "\n\n"
 	return WordList[WordNumber]
 
-def testRoutine(verbose=True):
-	Grid = [[" " for j in range(15)] for i in range(15)]
-	Grid[7][6] = "A"
-	Grid[7][7] = "P"
-	Grid[7][8] = "P"
-	Grid[7][9] = "L"
-	Grid[7][10] = "E"
-	Grid[7][11] = "S"
-	Grid[6][8] = "E"
-	Grid[8][8] = "S"
-	Grid[9][8] = "I"
-	Grid[10][8] = "L"
-	Grid[11][8] = "O"
-	Grid[12][8] = "N"
-	Grid[10][5] = "H"
-	Grid[10][6] = "E"
-	Grid[10][7] = "L"
-	Grid[10][9] = "O"
-	Grid[6][10] = "B"
-	Grid[8][10] = "T"
-	Grid[9][10] = "A"
-	chosenTiles = ["A","B","A","Z","Q","V","_"]
-	bestFullMove = findSolutions(Grid,chosenTiles,Dictionary,verbose)
-	bestSimpleMove = findSolutions(Grid,chosenTiles,SimpleDictionary,verbose)
-	print bestFullMove,bestSimpleMove
+def findBothSolutions(Grid,chosenTiles,verbose=False):
+	bestFullMove = findDictionarySolution(Grid,chosenTiles,Dictionary,verbose)
+	bestSimpleMove = findDictionarySolution(Grid,chosenTiles,SimpleDictionary,verbose)
+	return bestFullMove,bestSimpleMove
 
 def solverSetup():
 	try:
@@ -346,3 +325,25 @@ def solverSetup():
 
 if __name__ == '__main__':
 	solverSetup()
+	Grid = [[" " for j in range(15)] for i in range(15)]
+	Grid[7][6] = "A"
+	Grid[7][7] = "P"
+	Grid[7][8] = "P"
+	Grid[7][9] = "L"
+	Grid[7][10] = "E"
+	Grid[7][11] = "S"
+	Grid[6][8] = "E"
+	Grid[8][8] = "S"
+	Grid[9][8] = "I"
+	Grid[10][8] = "L"
+	Grid[11][8] = "O"
+	Grid[12][8] = "N"
+	Grid[10][5] = "H"
+	Grid[10][6] = "E"
+	Grid[10][7] = "L"
+	Grid[10][9] = "O"
+	Grid[6][10] = "B"
+	Grid[8][10] = "T"
+	Grid[9][10] = "A"
+	chosenTiles = ["A","B","A","Z","Q","V","_"]
+	print findBothSolutions(Grid,chosenTiles,verbose)
