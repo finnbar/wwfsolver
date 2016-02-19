@@ -22,6 +22,7 @@ def login(password):
 	return imapObj,smtpObj
 
 def getPositionOfWord(move):
+	print "Move:", move
 	r, c = move[1],move[2]
 	if move[3] == "down":
 		c = (c + c - len(move[0]))/2
@@ -124,10 +125,10 @@ def generateEmail(bestgrid, simplegrid, bestmove, simplemove):
 def sendMail(bestgrid,simplegrid,recipient,bestmove,simplemove):
 	if smtpObj:
 		mailString = generateEmail(bestgrid,simplegrid,bestmove,simplemove)
-		success = smtpObj.sendmail(myEmail,recipent,mailString)
+		success = smtpObj.sendmail(myEmail,recipient,mailString)
 		count = 0
 		while success != {} and count < 5:
-			success = smtpObj.sendmail(myEmail,recipent,mailString)
+			success = smtpObj.sendmail(myEmail,recipient,mailString)
 			count += 1
 		if count >= 5:
 			print "ERROR ERROR ERROR"
@@ -226,7 +227,7 @@ def solveGrid(filename,tiles,recipient):
 			chosenTiles.append(i)
 	bestgrid, simplegrid, bestmove, simplemove = processImage(filename,chosenTiles)
 	#print generateEmail(bestgrid,simplegrid,bestmove,simplemove)
-	sendMail(grid,bestmove,simplemove,recipient)
+	sendMail(bestgrid,simplegrid,recipient,bestmove,simplemove)
 	os.remove(filename)
 
 def emailSetup(password):
