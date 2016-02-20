@@ -82,10 +82,20 @@ def processImage(filename,chosenTiles):
 	#screenshot.show()
 	ImageGrid = parseGrid(screenshot)
 	Grid = readGrid(ImageGrid)
-	fullSol, simpleSol = findBothSolutions(Grid,chosenTiles,True)
-	bestgrid = placeOnGrid(Grid,findPlacements(Grid,fullSol),fullSol[0])
-	simplegrid = placeOnGrid(Grid,findPlacements(Grid,simpleSol),simpleSol[0])
-	return bestgrid, simplegrid, fullSol, simpleSol
+	empty = True # Assume empty until something's found.
+	for i in Grid:
+		for j in i:
+			if j != " ":
+				empty = False
+				break
+		if not empty:
+			break
+	if not empty:
+		fullSol, simpleSol = findBothSolutions(Grid,chosenTiles,True)
+		bestgrid = placeOnGrid(Grid,findPlacements(Grid,fullSol),fullSol[0])
+		simplegrid = placeOnGrid(Grid,findPlacements(Grid,simpleSol),simpleSol[0])
+		return bestgrid, simplegrid, fullSol, simpleSol
+	return False, False, False, False
 
 def imageProcessingSetup():
 	if loadComparisonData("data-362") == 0:

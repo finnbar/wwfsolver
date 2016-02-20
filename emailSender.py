@@ -10,7 +10,6 @@ def login(password):
 	smtpObj.starttls()
 	smtpObj.login(myEmail,password)
 	print "SMTP done!"
-	# TODO: SECURELY STORE PASSWORD, FINNBAR.
 	# Anyway, we now have an SMTP object, which can be passed to other functions
 	imapObj = imaplib2.IMAP4_SSL("imap.googlemail.com")
 	imapObj.login(myEmail,password)
@@ -137,6 +136,21 @@ def sendMail(bestgrid,simplegrid,recipient,bestmove,simplemove):
 	else:
 		print "Not connected."
 
+def sendFailureMail(error, recipient):
+	if smtpObj:
+		mailString = "We're sorry, but the program returned an error. Maybe take another screenshot and resend it?\n"+error
+		success = smtpObj.sendmail(myEmail,recipient,mailString)
+		count = 0
+		while success != {} and count < 5:
+			success = smtpObj.sendmail(myEmail,recipient,mailString)
+			count += 1
+		if count >= 5:
+			print "ERROR ERROR ERROR"
+		else:
+			print "Email sent!"
+	else:
+		print "Not connected."
+
 def logout():
 	if smtpObj:
 		smtpObj.quit()
@@ -226,17 +240,24 @@ def solveGrid(filename,tiles,recipient):
 		if i in "ABCDEFGHIJKLMNOPQRSTUVWXYZ_":
 			chosenTiles.append(i)
 	bestgrid, simplegrid, bestmove, simplemove = processImage(filename,chosenTiles)
-	#print generateEmail(bestgrid,simplegrid,bestmove,simplemove)
-	sendMail(bestgrid,simplegrid,recipient,bestmove,simplemove)
+	if bestgrid == False:
+		sendFailureMail("Couldn't read the grid.",recipient)
+	else if bestmove == False and simplemove == False:
+		sendFailureMail("No solutions were found",recipient)
+	else:
+		#print generateEmail(bestgrid,simplegrid,bestmove,simplemove)
+		sendMail(bestgrid,simplegrid,recipient,bestmove,simplemove)
 	os.remove(filename)
 
 def emailSetup(password):
 	global imapObj,smtpObj
 	imapObj,smtpObj = login(password)
 	imageProcessingSetup()
-	raw_input("Press enter to finish.")
+	quitCommand = ""
+	while quitCommand != "q":
+		quitCommand = raw_input("Type q and press enter to finish.")
 	logout()
 
 if __name__ == '__main__':
 	emailSetup(raw_input("Enter password: "))
-	solveGrid("exampleScreenshot362.png","ABAZQV_","finnbar.keating@kcl.ac.uk")
+	solveGrid("exampleScreenshot362.png","ABAZQV_","")

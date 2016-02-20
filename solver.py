@@ -268,19 +268,22 @@ def findDictionarySolution(g,chosenTiles,dictionary,verbose=False):
 	if verbose: print len(WordList),"words found."
 	HighestScore = 0
 	WordNumber = 0
-	for i in range(len(WordList)):
-		#print WordList[i]
-		s = scoreMove(WordList[i],grid,Modifiers)
-		if s > HighestScore:
-			HighestScore = s
-			WordNumber = i
-	if verbose: print "Found all scores."
-	newGrid = placeOnGrid(grid, findPlacements(grid,WordList[WordNumber]), WordList[WordNumber][0])
-	if verbose:
-		prettyPrint(newGrid)
-		print(WordList[WordNumber],HighestScore)
-		print "\n\n"
-	return WordList[WordNumber]
+	if len(WordList) > 0:
+		for i in range(len(WordList)):
+			#print WordList[i]
+			s = scoreMove(WordList[i],grid,Modifiers)
+			if s > HighestScore:
+				HighestScore = s
+				WordNumber = i
+		if verbose: print "Found all scores."
+		newGrid = placeOnGrid(grid, findPlacements(grid,WordList[WordNumber]), WordList[WordNumber][0])
+		if verbose:
+			prettyPrint(newGrid)
+			print(WordList[WordNumber],HighestScore)
+			print "\n\n"
+		return WordList[WordNumber]
+	else:
+		return False
 
 def findBothSolutions(Grid,chosenTiles,verbose=False):
 	bestFullMove = findDictionarySolution(Grid,chosenTiles,Dictionary,verbose)
