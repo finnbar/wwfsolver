@@ -31,7 +31,7 @@ def findPlacements(g,solution):
 			g[sx][i] = w[i+len(w)-1-sy]
 	return placements
 
-def findAllWords(g,line,tiles,row,column,word,flipped,dictionary,blanks=[],attached=False):
+def findAllWords(g,line,tiles,row,column,word,flipped,dictionary,blanks=[],attached=False,usedTile=False):
 	WordList = []
 	possibles = line[column][1:] # Ignore the bonus string...
 	for possible in possibles:
@@ -45,34 +45,35 @@ def findAllWords(g,line,tiles,row,column,word,flipped,dictionary,blanks=[],attac
 				if row + 1 < 15:
 					if g[row+1][column] != " ":
 						attached = True
-				if isCompletedWord(word+possible,dictionary) and attached:
+				newBlanks = blanks[:]
+				newTiles = tiles[:]
+				if line[column][0] == "tiles":
+					if not possible in newTiles:
+						newTiles.remove("_")
+						newBlanks.append(len(word))
+					else:
+						newTiles.remove(possible)
+				if isCompletedWord(word+possible,dictionary) and attached and usedTile:
 					# Last check: is this the end of a word?:
 					orientation = ["across","down"][flipped]
 					c = [column,row][flipped]
 					r = [row,column][flipped]
 					if column + 1 < 15:
 						if g[row][column+1] == " ":
-							if not (word+possible,r,c,orientation,blanks) in WordList:
-								WordList.append((word+possible,r,c,orientation,blanks))
+							if not (word+possible,r,c,orientation,newBlanks) in WordList:
+								WordList.append((word+possible,r,c,orientation,newBlanks))
 					else:
-						if not (word+possible,r,c,orientation,blanks) in WordList:
-							WordList.append((word+possible,r,c,orientation,blanks))
-				newBlanks = blanks[:]
+						if not (word+possible,r,c,orientation,newBlanks) in WordList:
+							WordList.append((word+possible,r,c,orientation,newBlanks))
 				if line[column][0] == "tiles":
-					newTiles = tiles[:]
-					if not possible in newTiles:
-						newTiles.remove("_")
-						newBlanks.append(len(word))
-					else:
-						newTiles.remove(possible)
 					if column + 1 < 15:
-						for newword in findAllWords(g,line,newTiles,row,column+1,word+possible,flipped,dictionary,newBlanks,attached):
+						for newword in findAllWords(g,line,newTiles,row,column+1,word+possible,flipped,dictionary,newBlanks,attached,True):
 							WordList.append(newword)
 				else:
 					# So we didn't add anything, but we have to continue.
 					# This allows you to continue words.
 					if column + 1 < 15:
-						for newword in findAllWords(g,line,tiles,row,column+1,word+possible,flipped,dictionary,newBlanks,True):
+						for newword in findAllWords(g,line,tiles,row,column+1,word+possible,flipped,dictionary,newBlanks,True,usedTile):
 							WordList.append(newword)
 	return WordList
 
@@ -142,9 +143,9 @@ def scoreMove(word,grid,modifiers,verbose=False):
 	count = 0
 	blanks = word[4][:]
 	for tile in placements:
+		wordModifiers,tileScore = scoreLetter(tile,grid,modifiers,wordModifiers,verbose)
 		if not (count in blanks):
-			wordModifiers,tileScore = scoreLetter(tile,grid,modifiers,wordModifiers,verbose)
-			score += tileScore
+			score += tileScore # We don't count the tile if it's blank.
 		# Now, check if any new words are created, but only...
 		if not tile[3]: # ...if it was placed this turn.
 			anotherWord = False
@@ -163,8 +164,8 @@ def scoreMove(word,grid,modifiers,verbose=False):
 					bonusWordModifiers,s = scoreLetter((grid[k][tile[2]],k,tile[2]),grid,modifiers,bonusWordModifiers,verbose)
 					bonusScore += s
 			if anotherWord:
+				bonusWordModifiers,s = scoreLetter(tile,grid,modifiers,bonusWordModifiers,verbose)
 				if not (count in blanks):
-					bonusWordModifiers,s = scoreLetter(tile,grid,modifiers,bonusWordModifiers,verbose)
 					bonusScore += s # It's used in another word, add its score again
 				bonusScore = wordMultiplier(bonusScore,bonusWordModifiers)
 				if verbose: print("We've added another word! Bonus is ",bonusScore)
@@ -174,7 +175,7 @@ def scoreMove(word,grid,modifiers,verbose=False):
 	return score + extraScore
 
 def wordMultiplier(score,wordModifiers):
-	for modifier in set(wordModifiers):
+	for modifier in wordModifiers:
 		if modifier == "DW":
 			score *= 2
 		elif modifier == "TW":
@@ -270,8 +271,8 @@ def findDictionarySolution(g,chosenTiles,dictionary,verbose=False):
 	WordNumber = 0
 	if len(WordList) > 0:
 		for i in range(len(WordList)):
-			#print WordList[i]
 			s = scoreMove(WordList[i],grid,Modifiers)
+			#print WordList[i],s
 			if s > HighestScore:
 				HighestScore = s
 				WordNumber = i
@@ -349,4 +350,4 @@ if __name__ == '__main__':
 	Grid[8][10] = "T"
 	Grid[9][10] = "A"
 	chosenTiles = ["A","B","A","Z","Q","V","_"]
-	print findBothSolutions(Grid,chosenTiles,verbose)
+	print findBothSolutions(Grid,chosenTiles,True)

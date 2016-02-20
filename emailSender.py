@@ -122,32 +122,44 @@ def generateEmail(bestgrid, simplegrid, bestmove, simplemove):
 	return mailString
 
 def sendMail(bestgrid,simplegrid,recipient,bestmove,simplemove):
+	global imapObj,smtpObj
 	if smtpObj:
 		mailString = generateEmail(bestgrid,simplegrid,bestmove,simplemove)
 		success = smtpObj.sendmail(myEmail,recipient,mailString)
 		count = 0
-		while success != {} and count < 5:
-			success = smtpObj.sendmail(myEmail,recipient,mailString)
-			count += 1
-		if count >= 5:
-			print "ERROR ERROR ERROR"
+		if smtpObj.docmd("NOOP")[0] == 250:
+			while success != {} and count < 5:
+				success = smtpObj.sendmail(myEmail,recipient,mailString)
+				count += 1
+			if count >= 5:
+				print "ERROR ERROR ERROR"
+			else:
+				print "Email sent!"
 		else:
-			print "Email sent!"
+			logout()
+			imapObj,smtpObj = login(pswd)
+			sendMail(bestgrid,simplegrid,recipient,bestmove,simplemove)
 	else:
 		print "Not connected."
 
 def sendFailureMail(error, recipient):
+	global imapObj,smtpObj
 	if smtpObj:
-		mailString = "We're sorry, but the program returned an error. Maybe take another screenshot and resend it?\n"+error
+		mailString = "Subject: Words With Friends (requested " + time.ctime() + ")\nWe're sorry, but the program returned an error. Maybe take another screenshot and resend it?\n"+error
 		success = smtpObj.sendmail(myEmail,recipient,mailString)
 		count = 0
-		while success != {} and count < 5:
-			success = smtpObj.sendmail(myEmail,recipient,mailString)
-			count += 1
-		if count >= 5:
-			print "ERROR ERROR ERROR"
+		if smtpObj.docmd("NOOP")[0] == 250:
+			while success != {} and count < 5:
+				success = smtpObj.sendmail(myEmail,recipient,mailString)
+				count += 1
+			if count >= 5:
+				print "ERROR ERROR ERROR"
+			else:
+				print "Email sent!"
 		else:
-			print "Email sent!"
+			logout()
+			imapObj,smtpObj = login(pswd)
+			sendFailureMail(error, recipient)
 	else:
 		print "Not connected."
 
@@ -239,8 +251,8 @@ def solveGrid(filename,tiles,recipient):
 	for i in tiles:
 		if i in "ABCDEFGHIJKLMNOPQRSTUVWXYZ_":
 			chosenTiles.append(i)
-	bestgrid, simplegrid, bestmove, simplemove = processImage(filename,chosenTiles)
-	if bestgrid == False:
+	bestgrid, simplegrid, bestmove, simplemove, emptyGrid = processImage(filename,chosenTiles)
+	if emptyGrid:
 		sendFailureMail("Couldn't read the grid.",recipient)
 	elif bestmove == False and simplemove == False:
 		sendFailureMail("No solutions were found",recipient)
@@ -250,7 +262,8 @@ def solveGrid(filename,tiles,recipient):
 	os.remove(filename)
 
 def emailSetup(password):
-	global imapObj,smtpObj
+	global imapObj,smtpObj,pswd
+	pswd = password
 	imapObj,smtpObj = login(password)
 	imageProcessingSetup()
 	quitCommand = ""

@@ -1,6 +1,7 @@
 from PIL import Image
 import os
 from solver import *
+import copy
 borderEdgeX = 3 # Border between edge and start of grid
 borderEdgeY = 110
 borderX = 5 # Border between two edges of squares (left to right)
@@ -82,6 +83,7 @@ def processImage(filename,chosenTiles):
 	#screenshot.show()
 	ImageGrid = parseGrid(screenshot)
 	Grid = readGrid(ImageGrid)
+	Grid2 = copy.deepcopy(Grid)
 	empty = True # Assume empty until something's found.
 	for i in Grid:
 		for j in i:
@@ -91,11 +93,14 @@ def processImage(filename,chosenTiles):
 		if not empty:
 			break
 	if not empty:
+		bestgrid,simplegrid = False, False
 		fullSol, simpleSol = findBothSolutions(Grid,chosenTiles,True)
-		bestgrid = placeOnGrid(Grid,findPlacements(Grid,fullSol),fullSol[0])
-		simplegrid = placeOnGrid(Grid,findPlacements(Grid,simpleSol),simpleSol[0])
-		return bestgrid, simplegrid, fullSol, simpleSol
-	return False, False, False, False
+		if not (fullSol == False):
+			bestgrid = placeOnGrid(Grid,findPlacements(Grid,fullSol),fullSol[0])
+		if not (simpleSol == False):
+			simplegrid = placeOnGrid(Grid2,findPlacements(Grid2,simpleSol),simpleSol[0])
+		return bestgrid, simplegrid, fullSol, simpleSol, False
+	return False, False, False, False, True
 
 def imageProcessingSetup():
 	if loadComparisonData("data-362") == 0:
@@ -105,4 +110,8 @@ def imageProcessingSetup():
 
 if __name__ == '__main__':
 	imageProcessingSetup()
-	print processImage("exampleScreenshot362.png",["A","B","A","Z","Q","V","_"])
+	bestgrid,simplegrid,fullSol,simpleSol = processImage("exampleScreenshot362.png",["A","_","E","B","C","D","J"])
+	prettyPrint(bestgrid)
+	print ""
+	prettyPrint(simplegrid)
+	print fullSol, simpleSol
