@@ -242,7 +242,7 @@ def solveGrid(filename,tiles,recipient):
 	bestgrid, simplegrid, bestmove, simplemove = processImage(filename,chosenTiles)
 	if bestgrid == False:
 		sendFailureMail("Couldn't read the grid.",recipient)
-	else if bestmove == False and simplemove == False:
+	elif bestmove == False and simplemove == False:
 		sendFailureMail("No solutions were found",recipient)
 	else:
 		#print generateEmail(bestgrid,simplegrid,bestmove,simplemove)
