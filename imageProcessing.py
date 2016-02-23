@@ -30,7 +30,7 @@ def parseGrid(image):
 	return ImageGrid
 
 def identifySquare(tile):
-	lowestError = 200 # How much error is allowed before deeming an image as not being a letter.
+	lowestError = 250 # How much error is allowed before deeming an image as not being a letter.
 	bestFit = ""
 	for i in comparisonData:
 		err = compareImages(tile,comparisonData[i])
@@ -85,7 +85,7 @@ def createComparisonData(folder):
 
 def processImage(filename,chosenTiles):
 	screenshot = openImage(filename)
-	#screenshot.show()
+	screenshot.show()
 	ImageGrid = parseGrid(screenshot)
 	Grid = readGrid(ImageGrid)
 	Grid2 = copy.deepcopy(Grid)
@@ -115,8 +115,8 @@ def imageProcessingSetup():
 
 if __name__ == '__main__':
 	imageProcessingSetup()
-	bestgrid,simplegrid,fullSol,simpleSol,error = processImage("exampleScreenshots/NMUJj39.png",["A","_","E","B","C","D","J"])
-	if(error) print "ERROR"
+	bestgrid,simplegrid,fullSol,simpleSol,error = processImage("exampleScreenshots/yqnnbJI.png",["A","_","E","B","C","D","J"])
+	if(error): print "ERROR"
 	prettyPrint(bestgrid)
 	print ""
 	prettyPrint(simplegrid)
