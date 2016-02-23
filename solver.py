@@ -151,13 +151,13 @@ def scoreMove(word,grid,modifiers,verbose=False):
 			anotherWord = False
 			bonusScore = 0
 			bonusWordModifiers = []
-			if grid[tile[1]+1][tile[2]] != " ":
+			if tile[1]+1 < 15 and grid[tile[1]+1][tile[2]] != " ":
 				anotherWord = True
 				for k in range(tile[1]+1,15):
 					if grid[k][tile[2]] == " ": break
 					bonusWordModifiers,s = scoreLetter((grid[k][tile[2]],k,tile[2]),grid,modifiers,bonusWordModifiers,verbose)
 					bonusScore += s
-			if grid[tile[1]-1][tile[2]] != " ":
+			if tile[1]-1 > -1 and grid[tile[1]-1][tile[2]] != " ":
 				anotherWord = True
 				for k in range(tile[1]-1,-1,-1):
 					if grid[k][tile[2]] == " ": break

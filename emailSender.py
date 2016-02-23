@@ -273,4 +273,4 @@ def emailSetup(password):
 
 if __name__ == '__main__':
 	emailSetup(raw_input("Enter password: "))
-	solveGrid("exampleScreenshot362.png","ABAZQV_","")
+	solveGrid("exampleScreenshots/exampleScreenshot362.png","ABAZQV_","")

@@ -2,13 +2,12 @@ from PIL import Image
 import os
 from solver import *
 import copy
-borderEdgeX = 3 # Border between edge and start of grid
-borderEdgeY = 110
-borderX = 5 # Border between two edges of squares (left to right)
-borderY = 6 # Border between two edges of squares (up to down)
-sizeX = 19 # Box size
-sizeY = 18 # Box size
-# bEX, bEY, bX, bY, sX, sY = 1, 323, 2, 3, 46, 45 for exampleScreenshot768
+borderEdgeX = 4 # Border between edge and start of grid
+borderEdgeY = 306
+borderX = 4 # Border between two edges of squares (left to right)
+borderY = 4 # Border between two edges of squares (up to down)
+sizeX = 68 # Box size
+sizeY = 68 # Box size
 comparisonData = {}
 
 def openImage(location):
@@ -31,7 +30,7 @@ def parseGrid(image):
 	return ImageGrid
 
 def identifySquare(tile):
-	lowestError = 20 # How much error is allowed before deeming an image as not being a letter.
+	lowestError = 200 # How much error is allowed before deeming an image as not being a letter.
 	bestFit = ""
 	for i in comparisonData:
 		err = compareImages(tile,comparisonData[i])
@@ -72,11 +71,17 @@ def loadComparisonData(folder):
 
 def createComparisonData(folder):
 	# This function creates an image for each letter, which will be useful as we can compare unknown tiles to these known ones and look for similarities!
-	screenshot = openImage("exampleScreenshot362.png")
+	screenshot = openImage("exampleScreenshots/DLJzVwV.png")
 	ImageGrid = parseGrid(screenshot)
-	saveData = {"C": ImageGrid[6][7], "U": ImageGrid[7][7], "L": ImageGrid[8][7], "T": ImageGrid[9][7], "I": ImageGrid[9][8], "G": ImageGrid[9][9], "A": ImageGrid[8][9], "F": ImageGrid[7][9], "V": ImageGrid[7][11], "E": ImageGrid[7][12]}
+	ImageGrid[0][0].show()
+	saveData = {"A": ImageGrid[9][3], "B": ImageGrid[7][6], "C": ImageGrid[7][3], "D": ImageGrid[9][5], "E": ImageGrid[2][2], "F": ImageGrid[0][8], "G": ImageGrid[11][2], "H": ImageGrid[14][13], "I": ImageGrid[3][4], "J": ImageGrid[9][9], "L": ImageGrid[0][6], "M": ImageGrid[13][7], "N": ImageGrid[0][3], "O": ImageGrid[9][7], "P": ImageGrid[13][5], "Q": ImageGrid[3][0], "R": ImageGrid[7][5], "S": ImageGrid[11][5], "T": ImageGrid[2][3], "U": ImageGrid[7][4], "V": ImageGrid[14][3], "W": ImageGrid[8][7], "X": ImageGrid[10][3], "Y": ImageGrid[2][1],"Z": ImageGrid[13][10]} 
 	for i in saveData:
 		saveData[i].save(folder+"/"+i+".png")
+	# Because that screenshot didn't contain K, we need to look at another one.
+	screenshot = openImage("exampleScreenshots/NMUJj39.png")
+	ImageGrid = parseGrid(screenshot)
+	ImageGrid[5][13].save(folder+"/K.png")
+	# Silly K.
 
 def processImage(filename,chosenTiles):
 	screenshot = openImage(filename)
@@ -110,7 +115,8 @@ def imageProcessingSetup():
 
 if __name__ == '__main__':
 	imageProcessingSetup()
-	bestgrid,simplegrid,fullSol,simpleSol = processImage("exampleScreenshot362.png",["A","_","E","B","C","D","J"])
+	bestgrid,simplegrid,fullSol,simpleSol,error = processImage("exampleScreenshots/NMUJj39.png",["A","_","E","B","C","D","J"])
+	if(error) print "ERROR"
 	prettyPrint(bestgrid)
 	print ""
 	prettyPrint(simplegrid)
