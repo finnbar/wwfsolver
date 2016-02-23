@@ -35962,6 +35962,7 @@ czarists
 czaritza
 czaritzas
 czars
+da
 dab
 dabbed
 dabber
@@ -40433,6 +40434,7 @@ dhurrie
 dhurries
 dhuti
 dhutis
+di
 diabase
 diabases
 diabasic
@@ -54193,6 +54195,7 @@ fazenda
 fazendas
 fazes
 fazing
+fe
 feal
 fealties
 fealty
@@ -54968,6 +54971,7 @@ fez
 fezes
 fezzed
 fezzes
+fi
 fiacre
 fiacres
 fiance
@@ -61823,6 +61827,7 @@ ghoulishnesses
 ghouls
 ghyll
 ghylls
+gi
 giant
 giantess
 giantesses
@@ -80877,6 +80882,7 @@ khirkahs
 khis
 khoum
 khoums
+ki
 kiang
 kiangs
 kiaugh
@@ -101917,6 +101923,7 @@ ohmmeters
 ohms
 oho
 ohs
+oi
 oidia
 oidium
 oil
@@ -121396,6 +121403,7 @@ qanat
 qanats
 qat
 qats
+qi
 qindar
 qindarka
 qindars
@@ -172286,6 +172294,7 @@ yurt
 yurta
 yurts
 ywis
+za
 zabaglione
 zabagliones
 zabaione

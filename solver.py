@@ -51,8 +51,10 @@ def findAllWords(g,line,tiles,row,column,word,flipped,dictionary,blanks=[],attac
 					if not possible in newTiles:
 						newTiles.remove("_")
 						newBlanks.append(len(word))
+						usedTile = True
 					else:
 						newTiles.remove(possible)
+						usedTile = True
 				if isCompletedWord(word+possible,dictionary) and attached and usedTile:
 					# Last check: is this the end of a word?:
 					orientation = ["across","down"][flipped]
@@ -67,7 +69,7 @@ def findAllWords(g,line,tiles,row,column,word,flipped,dictionary,blanks=[],attac
 							WordList.append((word+possible,r,c,orientation,newBlanks))
 				if line[column][0] == "tiles":
 					if column + 1 < 15:
-						for newword in findAllWords(g,line,newTiles,row,column+1,word+possible,flipped,dictionary,newBlanks,attached,True):
+						for newword in findAllWords(g,line,newTiles,row,column+1,word+possible,flipped,dictionary,newBlanks,attached,usedTile):
 							WordList.append(newword)
 				else:
 					# So we didn't add anything, but we have to continue.
@@ -107,11 +109,7 @@ def doRows(grid,tiles,dictionary,flipped=False):
 							if not t in line[j]:
 								line[j].append(t)
 		for q in range(15):
-			if q > 0:
-				if line[q-1][0] == "tiles":
-					for newword in findAllWords(grid,line,tiles,i,q,"",flipped,dictionary):
-						WordList.append(newword)
-			else: 
+			if q == 0 or line[q-1][0] == "tiles":
 				for newword in findAllWords(grid,line,tiles,i,q,"",flipped,dictionary):
 					WordList.append(newword)
 	return WordList
@@ -131,8 +129,9 @@ def scoreMove(word,grid,modifiers,verbose=False):
 		return scoreMove(w,g,m,verbose)
 	score = 0
 	extraScore = 0
+	blankModifiers = [["" for i in range(15)] for j in range(15)] # Pass this if the tile was there already.
 	wordModifiers = [] # Modifiers that affect the whole word (TW,DW)
-	placements = []
+	placements = [] # What tiles to check
 	if verbose: prettyPrint(grid)
 	for i in range(len(word[0])):
 		onGrid = False
@@ -143,7 +142,8 @@ def scoreMove(word,grid,modifiers,verbose=False):
 	count = 0
 	blanks = word[4][:]
 	for tile in placements:
-		wordModifiers,tileScore = scoreLetter(tile,grid,modifiers,wordModifiers,verbose)
+                m = (modifiers,blankModifiers)[tile[3]]
+		wordModifiers,tileScore = scoreLetter(tile,grid,m,wordModifiers,verbose)
 		if not (count in blanks):
 			score += tileScore # We don't count the tile if it's blank.
 		# Now, check if any new words are created, but only...
@@ -319,7 +319,7 @@ def solverSetup():
 	Modifiers[6][0] = "TL"
 	Modifiers[6][4] = "DL"
 	Modifiers[7][3] = "DW"
-	Modifiers[7][7] = "DW"
+	#Modifiers[7][7] = "DW"
 	# And reflect
 	for x in range(8):
 		for y in range(8):
