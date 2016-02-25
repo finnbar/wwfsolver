@@ -239,7 +239,7 @@ class Idler(object):
 		print "Got an email!"
 		result, data = imapObj.uid("search", None, "UNSEEN")
 		if result == "OK":
-			loginSMTP()
+			loginSMTP(pswd)
 			for mailuid in data[0].split():
 				emailResult, emailData = imapObj.uid("fetch",mailuid,"(RFC822)")
 				if emailResult == "OK":
