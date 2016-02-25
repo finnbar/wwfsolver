@@ -3,22 +3,27 @@ from threading import *
 from imageProcessing import *
 myEmail = "wordswithfriendssolver@gmail.com"
 
-def login(password):
-	global idler
+def loginSMTP(password):
+	global smtpObj
 	smtpObj = smtplib.SMTP("smtp.gmail.com", 587)
 	assert smtpObj.ehlo()[0] == 250
 	smtpObj.starttls()
 	smtpObj.login(myEmail,password)
 	print "SMTP done!"
-	# Anyway, we now have an SMTP object, which can be passed to other functions
+
+def loginIMAP(password):
+	global idler,imapObj
 	imapObj = imaplib2.IMAP4_SSL("imap.googlemail.com")
 	imapObj.login(myEmail,password)
 	imapObj.select("INBOX")
 	idler = Idler(imapObj)
 	idler.start()
 	print "IMAP done!"
+
+def login(password):
+	loginSMTP(password)
+	loginIMAP(password)
 	# Now we have an IMAP object too.
-	return imapObj,smtpObj
 
 def getPositionOfWord(move):
 	print "Move:", move
@@ -122,30 +127,30 @@ def generateEmail(bestgrid, simplegrid, bestmove, simplemove):
 	return mailString
 
 def sendMail(bestgrid,simplegrid,recipient,bestmove,simplemove):
-	global imapObj,smtpObj
 	if smtpObj:
 		mailString = generateEmail(bestgrid,simplegrid,bestmove,simplemove)
 		success = smtpObj.sendmail(myEmail,recipient,mailString)
 		count = 0
-		if smtpObj.docmd("NOOP")[0] == 250:
-			while success != {} and count < 5:
-				success = smtpObj.sendmail(myEmail,recipient,mailString)
-				count += 1
-			if count >= 5:
-				print "ERROR ERROR ERROR"
+		emailSent = False
+		while not emailSent:
+			if smtpObj.docmd("NOOP")[0] == 250:
+				while success != {} and count < 5:
+					success = smtpObj.sendmail(myEmail,recipient,mailString)
+					count += 1
+				if count >= 5:
+					print "ERROR ERROR ERROR"
+				else:
+					print "Email sent!"
+					emailSent = True
 			else:
-				print "Email sent!"
-		else:
-			logout()
-			imapObj,smtpObj = login(pswd)
-			sendMail(bestgrid,simplegrid,recipient,bestmove,simplemove)
+				logoutSMTP()
+				loginSMTP(pswd)
 	else:
 		print "Not connected."
 
 def sendFailureMail(error, recipient):
-	global imapObj,smtpObj
 	if smtpObj:
-		mailString = "Subject: Words With Friends (requested " + time.ctime() + ")\nWe're sorry, but the program returned an error. Maybe take another screenshot and resend it?\n"+error
+		mailString = "Subject: Words With Friends (requested " + time.ctime() + ")\nWe're sorry, but the program returned an error. Maybe take another screenshot and resend it?\nError: "+error
 		success = smtpObj.sendmail(myEmail,recipient,mailString)
 		count = 0
 		if smtpObj.docmd("NOOP")[0] == 250:
@@ -157,20 +162,26 @@ def sendFailureMail(error, recipient):
 			else:
 				print "Email sent!"
 		else:
-			logout()
-			imapObj,smtpObj = login(pswd)
+			logoutSMTP()
+			loginSMTP(pswd)
 			sendFailureMail(error, recipient)
 	else:
 		print "Not connected."
 
-def logout():
+def logoutSMTP():
 	if smtpObj:
 		smtpObj.quit()
+
+def logoutIMAP():
 	if idler:
 		idler.stop()
 		idler.join()
 	if imapObj:
 		imapObj.logout()
+
+def logout():
+	logoutSMTP()
+	logoutIMAP()
 
 '''
 This class is taken (and modified) from:
@@ -228,6 +239,7 @@ class Idler(object):
 		print "Got an email!"
 		result, data = imapObj.uid("search", None, "UNSEEN")
 		if result == "OK":
+			loginSMTP()
 			for mailuid in data[0].split():
 				emailResult, emailData = imapObj.uid("fetch",mailuid,"(RFC822)")
 				if emailResult == "OK":
@@ -242,6 +254,7 @@ class Idler(object):
 							open("screenshot.jpeg","wb").write(part.get_payload(decode=True))
 							solveGrid("screenshot.jpeg",emailmessage["Subject"],emailmessage["From"])
 					imapObj.store(mailuid, "+FLAGS", "\\Deleted")
+			logoutSMTP()
 		imapObj.expunge()
 
 def solveGrid(filename,tiles,recipient):
@@ -262,9 +275,9 @@ def solveGrid(filename,tiles,recipient):
 	os.remove(filename)
 
 def emailSetup(password):
-	global imapObj,smtpObj,pswd
+	global pswd
 	pswd = password
-	imapObj,smtpObj = login(password)
+	loginIMAP(password)
 	imageProcessingSetup()
 	quitCommand = ""
 	while quitCommand != "q":
