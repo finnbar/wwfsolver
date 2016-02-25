@@ -65,9 +65,9 @@ def readGrid(imageGrid, verbose=False):
 	for i in range(15):
 		for j in range(15):
 			if imageGrid[i][j] != "":
-				Grid[j][i] = identifySquare(imageGrid[i][j])
-				if Grid[j][i] == "":
-					Grid[j][i] = " "
+				grid[j][i] = identifySquare(imageGrid[i][j])
+				if grid[j][i] == "":
+					grid[j][i] = " "
 					if verbose: print "Tile at",j,i,"not recognised"
 	return grid
 
