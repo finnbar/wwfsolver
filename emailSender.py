@@ -1,6 +1,7 @@
 import imaplib2,smtplib,time,email
 from threading import *
 from imageProcessing import *
+import atexit
 myEmail = "wordswithfriendssolver@gmail.com"
 
 def loginSMTP(password):
@@ -275,14 +276,13 @@ def solveGrid(filename,tiles,recipient):
 	os.remove(filename)
 
 def emailSetup(password):
+	atexit.register(logout)
 	global pswd
 	pswd = password
 	loginIMAP(password)
 	imageProcessingSetup()
-	quitCommand = ""
-	while quitCommand != "q":
-		quitCommand = raw_input("Type q and press enter to finish.")
-	logout()
+	while True:
+		pass
 
 if __name__ == '__main__':
 	emailSetup(raw_input("Enter password: "))
