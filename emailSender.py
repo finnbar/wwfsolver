@@ -327,6 +327,7 @@ def emailSetup(password):
 	atexit.register(logout)
 	global pswd
 	pswd = password
+	print "Setting up email!"
 	login(password)
 	t = Timer(1200.0,restartIMAP)
 	t.start()

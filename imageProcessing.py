@@ -126,6 +126,7 @@ def imageProcessingSetup():
 	'''
 	Make sure that the comparisonData exists and is loaded, and set up the solver (the included module).
 	'''
+	print "Setting up image processing!"
 	if loadComparisonData("data") == 0:
 		createComparisonData("data")
 		loadComparisonData("data")

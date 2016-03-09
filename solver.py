@@ -319,6 +319,7 @@ def findBothSolutions(Grid,chosenTiles,verbose=False):
 	return bestFullMove,bestSimpleMove
 
 def solverSetup():
+	print "Setting up solver!"
 	try:
 		loadDictionaries("dictionary.txt","simpledictionary.txt")
 	except:
