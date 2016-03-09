@@ -324,7 +324,7 @@ def emailSetup(password):
 	atexit.register(logout)
 	global pswd
 	pswd = password
-	loginIMAP(password)
+	login(password)
 	t = Timer(1200.0,restartIMAP)
 	t.start()
 	imageProcessingSetup()
