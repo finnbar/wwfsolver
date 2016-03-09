@@ -106,7 +106,7 @@ def getLettersOfWord(move):
 	for i in move[0]:
 		letters.append(i)
 	letters.sort()
-	return ", ".join(t)
+	return ", ".join(letters)
 
 def prettyReturnGrid(grid,moveToDisplay):
 	'''
