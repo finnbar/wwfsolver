@@ -215,7 +215,7 @@ def logoutIMAP():
 
 def restartIMAP():
 	logoutIMAP()
-	loginIMAP()
+	loginIMAP(pswd)
 	t = Timer(1200.0,restartIMAP)
 	t.start()
 
