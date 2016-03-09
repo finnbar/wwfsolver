@@ -155,12 +155,14 @@ def sendMail(bestgrid,simplegrid,recipient,bestmove,simplemove):
 	'''
 	This creates an email, and then sends it off!
 	'''
+	print "Creating email!"
 	if smtpObj:
 		mailString = generateEmail(bestgrid,simplegrid,bestmove,simplemove)
 		success = smtpObj.sendmail(myEmail,recipient,mailString)
 		count = 0
 		emailSent = False
 		while not emailSent:
+			print smtpObj.docmd("NOOP")
 			if smtpObj.docmd("NOOP")[0] == 250:
 				while success != {} and count < 5:
 					success = smtpObj.sendmail(myEmail,recipient,mailString)
@@ -276,6 +278,7 @@ class Idler(object):
 	def dosync(self):
 		print "Got an email!"
 		result, data = imapObj.uid("search", None, "UNSEEN")
+		print data
 		if result == "OK":
 			loginSMTP(pswd)
 			for mailuid in data[0].split():
