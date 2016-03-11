@@ -209,9 +209,11 @@ def logoutIMAP():
 	if idler:
 		idler.stop()
 		idler.join()
-	if imapObj:
+	try:
 		imapObj.close()
 		imapObj.logout()
+	except:
+		pass
 
 def restartIMAP():
 	logoutIMAP()
